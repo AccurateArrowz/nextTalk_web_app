@@ -6,9 +6,15 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ) {
-  console.error(err);
+  const statusCode =
+    typeof err === "object" && err !== null && "statusCode" in err
+      ? Number((err as { statusCode?: number }).statusCode) || 500
+      : 500;
 
-  res.status(500).json({
-    message: "Internal server error"
+  const message =
+    err instanceof Error ? err.message : "Internal server error";
+
+  res.status(statusCode).json({
+    message
   });
 }

@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "Express.js + TypeScript backend for nextTalk-web-app",
+  "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "/Users/alinashrestha/.nvm/versions/node/v22.16.0/bin/node scripts/dev.mjs",
     "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "/Users/alinashrestha/.nvm/versions/node/v22.16.0/bin/node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -15,13 +16,18 @@
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.16.5",
     "morgan": "^1.10.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.9",
     "@types/node": "^24.0.12",
+    "bcryptjs": "^3.0.2",
+    "@types/bcryptjs": "^3.0.0",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.20.5",
     "typescript": "^5.8.3"
