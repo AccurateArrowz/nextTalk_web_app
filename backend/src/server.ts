@@ -9,4 +9,5 @@ const app = createApp();
 app.listen(env.port, () => {
   // Keep startup logging simple and explicit.
   console.log(`Server listening on http://localhost:${env.port}`);
+  console.log(`CORS allowed origins:`, env.clientOrigins);
 });

@@ -14,6 +14,7 @@ function setAuthCookie(res: Response, token: string) {
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
+    console.log(req.body);
     const result = await authService.register(req.body);
     setAuthCookie(res, result.token);
     res.status(201).json({

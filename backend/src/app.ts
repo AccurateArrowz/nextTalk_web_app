@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import multer from "multer";
 import { apiRouter } from "@routes/index.js";
 import { notFoundHandler } from "@middleware/notFoundHandler.js";
 import { errorHandler } from "@middleware/errorHandler.js";
@@ -9,17 +10,26 @@ import { env } from "@config/env.js";
 
 export function createApp() {
   const app = express();
-  const corsOptions = {
+  const corsOptions: cors.CorsOptions = {
     origin: env.clientOrigins,
-    credentials: true
+    credentials: true,
+    optionsSuccessStatus: 200,
   };
 
-  app.use(helmet());
-  // app.use(cors(corsOptions));
-  // Express 5 no longer accepts the bare "*" route pattern here.
-app.options(/.*/, cors(corsOptions));
+  // Express 5 requires named wildcards in path-to-regexp v8 — "/{*path}" matches all routes
+  app.options("/{*path}", cors(corsOptions)); // handle preflight explicitly
+  app.use(cors(corsOptions));                 // apply CORS headers to all responses
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" }, // allow cross-origin fetches
+    })
+  );
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  
+  const upload = multer();
+  app.use(upload.any()); // support multipart/form-data
+
   app.use(morgan("dev"));
 
   app.get("/health", (_req, res) => {
