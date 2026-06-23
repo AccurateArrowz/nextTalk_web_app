@@ -21,21 +21,29 @@ class AuthService {
       password: hashedPassword
     });
 
-    const token = this.generateToken(user.id, user.email);
+    const accessToken = this.generateToken(user.id, user.email);
 
     return {
       message: "User registered successfully",
       user: {
         id: user.id,
         fullName: user.fullName,
-        email: user.email
+        email: user.email,
+        profileImageUrl: user.profileImageUrl ?? null
       },
-      token
+      accessToken
     };
   }
 
   async login(input: LoginUserDto): Promise<AuthResponseDto> {
-    const user = await userRepository.findByEmail(input.email).select("+password");
+    if (!input?.email || !input?.password) {
+      const error = new Error("Email and password are required");
+      (error as Error & { statusCode?: number }).statusCode = 400;
+      throw error;
+    }
+
+    const userQuery = userRepository.findByEmail(input.email);
+    const user = await userQuery.select("+password");
 
     if (!user) {
       const error = new Error("Invalid email or password");
@@ -51,16 +59,17 @@ class AuthService {
       throw error;
     }
 
-    const token = this.generateToken(user.id, user.email);
+    const accessToken = this.generateToken(user.id, user.email);
 
     return {
       message: "Login successful",
       user: {
         id: user.id,
         fullName: user.fullName,
-        email: user.email
+        email: user.email,
+        profileImageUrl: user.profileImageUrl ?? null
       },
-      token
+      accessToken
     };
   }
 

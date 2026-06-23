@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const isServer = typeof window === "undefined";
+const apiBaseUrl = isServer
+  ? (process.env.INTERNAL_API_URL ?? "http://localhost:8000")
+  : "";
 
 export const registerSchema = z
   .object({
@@ -21,26 +24,45 @@ export const loginSchema = z
   })
   .strict();
 
+export const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(8, "New password must be at least 8 characters")
+      .regex(/[A-Z]/, "New password must include one uppercase letter")
+      .regex(/[0-9]/, "New password must include one number")
+  })
+  .strict();
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type PasswordInput = z.infer<typeof passwordSchema>;
+
+export type UserProfile = {
+  id: string;
+  fullName: string;
+  email: string;
+  profileImageUrl: string | null;
+};
 
 export type AuthApiResponse = {
   message: string;
-  user: {
-    id: string;
-    fullName: string;
-    email: string;
-  };
+  user: UserProfile;
 };
 
-async function request<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}/api/auth${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "include",
-    body: JSON.stringify(body)
+export type UserApiResponse = {
+  user: UserProfile;
+};
+
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const url = `${apiBaseUrl}${path}`;
+  const response = await fetch(url, {
+    ...options,
+    credentials: "include"
   });
 
   const payload = (await response.json().catch(() => ({}))) as
@@ -59,9 +81,51 @@ async function request<T>(path: string, body: unknown): Promise<T> {
 }
 
 export function registerUser(input: RegisterInput) {
-  return request<AuthApiResponse>("/register", input);
+  return apiFetch<AuthApiResponse>("/api/auth/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
 }
 
 export function loginUser(input: LoginInput) {
-  return request<AuthApiResponse>("/login", input);
+  return apiFetch<AuthApiResponse>("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
 }
+
+export function getCurrentUser() {
+  return apiFetch<UserApiResponse>("/api/users/me", {
+    method: "GET"
+  });
+}
+
+export function updateProfile(formData: FormData) {
+  return apiFetch<UserApiResponse>("/api/users/me", {
+    method: "PATCH",
+    body: formData
+  });
+}
+
+export function updatePasswordApi(input: PasswordInput) {
+  return apiFetch<{ message: string }>("/api/users/me/password", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
+}
+
+export function logoutUser() {
+  return apiFetch<{ message: string }>("/api/auth/logout", {
+    method: "POST"
+  });
+}
+

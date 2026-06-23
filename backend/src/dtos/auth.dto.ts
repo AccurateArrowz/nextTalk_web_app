@@ -13,10 +13,11 @@ export interface AuthUserDto {
   id: string;
   fullName: string;
   email: string;
+  profileImageUrl?: string | null;
 }
 
 export interface AuthResponseDto {
   message: string;
   user: AuthUserDto;
-  token: string;
+  accessToken: string;
 }

@@ -43,7 +43,7 @@ export default function LoginPage() {
 
     try {
       await loginAction(validData);
-      router.push("/dashboard");
+      router.push("/");
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Login failed");
     } finally {

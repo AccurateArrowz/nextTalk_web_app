@@ -20,6 +20,10 @@ const userSchema = new Schema<UserDocument>(
       required: true,
       minlength: 8,
       select: false
+    },
+    profileImageUrl: {
+      type: String,
+      default: null
     }
   },
   {

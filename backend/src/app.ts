@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import multer from "multer";
+import path from "node:path";
 import { apiRouter } from "@routes/index.js";
 import { notFoundHandler } from "@middleware/notFoundHandler.js";
 import { errorHandler } from "@middleware/errorHandler.js";
@@ -26,9 +26,7 @@ export function createApp() {
   );
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  
-  const upload = multer();
-  app.use(upload.any()); // support multipart/form-data
+  app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
   app.use(morgan("dev"));
 

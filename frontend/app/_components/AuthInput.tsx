@@ -33,6 +33,7 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
               "placeholder:text-slate-500",
               "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
               "transition-colors duration-150",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
               icon ? "pl-10" : "",
               error
                 ? "border-red-500/70 focus:ring-red-500"
