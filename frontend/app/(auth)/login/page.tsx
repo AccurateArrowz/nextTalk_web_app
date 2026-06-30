@@ -9,9 +9,11 @@ import SubmitButton from "@/app/_components/SubmitButton";
 import AuthFormError from "@/app/_components/AuthFormError";
 import { loginAction } from "@/app/_actions/auth-actions";
 import { loginSchema, type LoginInput } from "@/app/_lib/auth";
+import { useUser } from "@/app/_lib/UserContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshUser } = useUser();
   const [formData, setFormData] = useState<LoginInput>({
     email: "",
     password: ""
@@ -43,6 +45,7 @@ export default function LoginPage() {
 
     try {
       await loginAction(validData);
+      await refreshUser();
       router.push("/");
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Login failed");

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
-  const token = request.cookies.get("nexttalk_access_token")?.value;
+  const hasRefreshSession = Boolean(request.cookies.get("nexttalk_refresh_token")?.value);
   const { pathname } = request.nextUrl;
 
   const protectedRoutes = ["/profile", "/change-password"];
@@ -15,13 +15,13 @@ export function proxy(request: NextRequest) {
     pathname.startsWith(route)
   );
 
-  if (isProtectedRoute && !token) {
+  if (isProtectedRoute && !hasRefreshSession) {
     const url = new URL("/login", request.url);
     url.searchParams.set("from", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (isPublicRoute && token) {
+  if (isPublicRoute && hasRefreshSession) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

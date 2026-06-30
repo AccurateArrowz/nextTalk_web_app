@@ -1,10 +1,38 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/app/_lib/UserContext";
 
 export default function HomePage() {
   const { user, loading, logout } = useUser();
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
@@ -43,33 +71,70 @@ export default function HomePage() {
               <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
             ) : user ? (
               <div className="flex items-center gap-4">
-                <Link
-                  href="/profile"
-                  className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                >
-                  Profile
-                </Link>
-                <Link
-                  href="/change-password"
-                  className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                >
-                  Security
-                </Link>
-                <div className="w-8 h-8 rounded-full border border-indigo-500/30 overflow-hidden bg-slate-800 shadow-md">
-                  {user.profileImageUrl ? (
-                    <img src={user.profileImageUrl} alt={user.fullName} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-400">
-                      {user.fullName.charAt(0).toUpperCase()}
+                {user.role === "admin" && (
+                  <Link
+                    href="/admin/users"
+                    className="text-sm font-medium text-cyan-300 hover:text-cyan-200 transition-colors"
+                  >
+                    Users
+                  </Link>
+                )}
+                <div className="relative" ref={profileMenuRef}>
+                  <button
+                    type="button"
+                    aria-haspopup="menu"
+                    aria-expanded={isProfileMenuOpen}
+                    onClick={() => setIsProfileMenuOpen((current) => !current)}
+                    className="w-9 h-9 rounded-full border border-indigo-500/30 overflow-hidden bg-slate-800 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-slate-950"
+                  >
+                    {user.profileImageUrl ? (
+                      <img
+                        src={user.profileImageUrl}
+                        alt={user.fullName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-400">
+                        {user.fullName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </button>
+
+                  {isProfileMenuOpen && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 top-full z-20 mt-3 w-44 overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/95 p-2 shadow-2xl shadow-black/30 backdrop-blur-md"
+                    >
+                      <Link
+                        href="/profile"
+                        role="menuitem"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                        className="block rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 hover:text-white transition-colors"
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        href="/change-password"
+                        role="menuitem"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                        className="block rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 hover:text-white transition-colors"
+                      >
+                        Security
+                      </Link>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={async () => {
+                          setIsProfileMenuOpen(false);
+                          await logout();
+                        }}
+                        className="block w-full rounded-xl px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800 hover:text-red-300 transition-colors"
+                      >
+                        Sign out
+                      </button>
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={logout}
-                  className="text-sm font-medium text-slate-400 hover:text-red-400 transition-colors bg-transparent border-0 cursor-pointer"
-                >
-                  Sign out
-                </button>
               </div>
             ) : (
               <div className="flex items-center gap-3">
@@ -102,7 +167,7 @@ export default function HomePage() {
           </h1>
           <p className="mt-6 text-lg md:text-xl text-slate-300 leading-relaxed">
             {user
-              ? "You are logged in successfully. Navigate to your Profile to change your avatar, name, or update your password settings."
+              ? "You are logged in successfully. Use the avatar menu to manage your profile or security settings."
               : "Discover the scaffolded NexTalk client. Experience smooth authentication, beautiful profile customizing, and secure password updates."}
           </p>
         </div>
@@ -120,23 +185,6 @@ export default function HomePage() {
               className="rounded-full border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:scale-[1.02] transition-all duration-150"
             >
               Sign In
-            </Link>
-          </div>
-        )}
-
-        {!loading && user && (
-          <div className="flex flex-wrap gap-4 mt-4">
-            <Link
-              href="/profile"
-              className="rounded-full bg-indigo-500 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-400 shadow-lg shadow-indigo-500/20 hover:scale-[1.02] transition-all duration-150"
-            >
-              Edit Profile
-            </Link>
-            <Link
-              href="/change-password"
-              className="rounded-full border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:scale-[1.02] transition-all duration-150"
-            >
-              Change Password
             </Link>
           </div>
         )}
