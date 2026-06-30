@@ -21,6 +21,16 @@ const userSchema = new Schema<UserDocument>(
       minlength: 8,
       select: false
     },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user"
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active"
+    },
     profileImageUrl: {
       type: String,
       default: null

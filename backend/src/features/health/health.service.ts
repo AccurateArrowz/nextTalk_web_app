@@ -1,4 +1,4 @@
-import { healthRepository } from "@repositories/health.repository.js";
+import { healthRepository } from "@features/health/health.repository.js";
 
 class HealthService {
   getStatus() {

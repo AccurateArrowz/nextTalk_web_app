@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { healthService } from "@services/health.service.js";
+import { healthService } from "@features/health/health.service.js";
 
 export function getHealth(_req: Request, res: Response) {
   const payload = healthService.getStatus();

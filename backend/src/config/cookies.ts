@@ -1,2 +1,2 @@
 export const authCookieName = "nexttalk_auth";
-export const accessTokenCookieName = "nexttalk_access_token";
+export const refreshTokenCookieName = "nexttalk_refresh_token";

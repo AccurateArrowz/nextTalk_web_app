@@ -3,10 +3,10 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "node:path";
-import { apiRouter } from "@routes/index.js";
 import { notFoundHandler } from "@middleware/notFoundHandler.js";
 import { errorHandler } from "@middleware/errorHandler.js";
 import { env } from "@config/env.js";
+import { apiRouter } from "@routes/index.js";
 
 export function createApp() {
   const app = express();
@@ -37,6 +37,7 @@ export function createApp() {
     });
   });
 
+  app.use("/api/v1", apiRouter);
   app.use("/api", apiRouter);
   app.use(notFoundHandler);
   app.use(errorHandler);

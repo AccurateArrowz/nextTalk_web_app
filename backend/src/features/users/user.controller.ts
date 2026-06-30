@@ -2,8 +2,8 @@ import type { NextFunction, Response } from "express";
 import multer from "multer";
 import path from "node:path";
 import fs from "node:fs";
-import { userService } from "@services/user.service.js";
 import type { AuthenticatedRequest } from "@middleware/require-auth.js";
+import { userService } from "@features/users/user.service.js";
 
 const uploadsDir = path.resolve(process.cwd(), "uploads");
 

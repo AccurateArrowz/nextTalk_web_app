@@ -15,15 +15,11 @@
     "baseUrl": "./src",
     "paths": {
       "@config/*": ["config/*"],
-      "@controllers/*": ["controllers/*"],
-      "@dtos/*": ["dtos/*"],
       "@interfaces/*": ["interfaces/*"],
       "@middleware/*": ["middleware/*"],
-      "@models/*": ["models/*"],
-      "@repositories/*": ["repositories/*"],
       "@routes/*": ["routes/*"],
-      "@services/*": ["services/*"],
-      "@utils/*": ["utils/*"]
+      "@utils/*": ["utils/*"],
+      "@features/*": ["features/*"]
     }
   },
   "include": ["src/**/*.ts"],

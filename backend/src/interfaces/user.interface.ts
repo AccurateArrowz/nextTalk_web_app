@@ -5,6 +5,8 @@ export interface IUser {
   fullName: string;
   email: string;
   password: string;
+  role: "user" | "admin";
+  status: "active" | "inactive";
   profileImageUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;

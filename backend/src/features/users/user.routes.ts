@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { getMe, patchMe, profileImageUpload, updatePassword } from "@controllers/user.controller.js";
 import { requireAuth } from "@middleware/require-auth.js";
+import { getMe, patchMe, profileImageUpload, updatePassword } from "@features/users/user.controller.js";
 
 export const userRouter = Router();
 
