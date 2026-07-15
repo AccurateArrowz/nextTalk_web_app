@@ -16,6 +16,11 @@ export async function connectDatabase() {
     console.log("✓ Database connected successfully");
   } catch (error) {
     console.error("✗ Failed to connect to database:", error);
-    throw error;
+
+    // In local development we keep the server alive so the rest of the API can be exercised.
+    // Production should still fail fast so deployment issues are not hidden.
+    if (env.nodeEnv === "production") {
+      throw error;
+    }
   }
 }

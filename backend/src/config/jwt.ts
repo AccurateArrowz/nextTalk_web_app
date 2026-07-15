@@ -1,7 +1,8 @@
 import { env } from "@config/env.js";
 
 export const jwtConfig = {
-  secret: env.jwtSecret,
+  accessSecret: env.jwtSecret,
+  refreshSecret: env.jwtRefreshSecret,
   accessTokenExpiresIn: "15m",
   refreshTokenExpiresIn: "30d"
 } as const;

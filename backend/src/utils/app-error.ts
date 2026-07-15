@@ -1,4 +1,4 @@
-import type { HttpError } from "@interfaces/http-error.interface.js";
+import type { HttpError } from "@utils/http-error.js";
 
 export class AppError extends Error implements HttpError {
   constructor(

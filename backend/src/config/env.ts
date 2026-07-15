@@ -4,6 +4,16 @@ dotenv.config();
 
 const port = Number(process.env.PORT); // port 5000 is reserved by macOS AirPlay Receiver
 
+function requireEnv(name: string) {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`${name} environment variable is required`);
+  }
+
+  return value;
+}
+
 function parseClientOrigins(value: string | undefined) {
   if (!value) {
     throw new Error("CLIENT_ORIGIN environment variable is required");
@@ -18,7 +28,8 @@ function parseClientOrigins(value: string | undefined) {
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: Number.isFinite(port) ? port : 8000,
-  mongoUri: process.env.MONGO_URI ?? "",
-  jwtSecret: process.env.JWT_SECRET ?? "dev-secret-change-me",
+  mongoUri: process.env.MONGO_URI,
+  jwtSecret: requireEnv("JWT_SECRET"),
+  jwtRefreshSecret: requireEnv("JWT_REFRESH_SECRET"),
   clientOrigins: parseClientOrigins(process.env.CLIENT_ORIGIN)
 };

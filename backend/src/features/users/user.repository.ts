@@ -5,6 +5,10 @@ class UserRepository {
     return UserModel.findOne({ email: email.toLowerCase().trim() });
   }
 
+  findByUsername(username: string) {
+    return UserModel.findOne({ username: username.trim() });
+  }
+
   findById(id: string) {
     return UserModel.findById(id);
   }
@@ -20,12 +24,17 @@ class UserRepository {
   updateById(
     id: string,
     payload: {
-      fullName?: string;
+      username?: string;
       email?: string;
       password?: string;
-      role?: "user" | "admin";
-      status?: "active" | "inactive";
-      profileImageUrl?: string | null;
+      role?: "user" | "platformAdmin";
+      firstName?: string | null;
+      lastName?: string | null;
+      avatarUrl?: string | null;
+      status?: {
+        state: "online" | "offline" | "away";
+        lastSeenAt: Date;
+      };
     }
   ) {
     return UserModel.findByIdAndUpdate(id, payload, {
@@ -35,12 +44,17 @@ class UserRepository {
   }
 
   create(payload: {
-    fullName: string;
+    username: string;
     email: string;
     password: string;
-    role?: "user" | "admin";
-    status?: "active" | "inactive";
-    profileImageUrl?: string | null;
+    role?: "user" | "platformAdmin";
+    firstName?: string | null;
+    lastName?: string | null;
+    avatarUrl?: string | null;
+    status?: {
+      state: "online" | "offline" | "away";
+      lastSeenAt: Date;
+    };
   }) {
     return UserModel.create(payload);
   }

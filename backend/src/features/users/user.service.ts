@@ -1,36 +1,48 @@
 import bcrypt from "bcryptjs";
 import { userRepository } from "@features/users/user.repository.js";
 import type {
-  AdminCreateUserDto,
-  AdminUpdateUserDto,
-  AdminUserListResponseDto,
-  UpdateUserProfileDto,
-  UserProfileDto
-} from "@features/users/user.dto.js";
+  AdminCreateUserInput,
+  AdminUpdateUserInput,
+  AdminUserListResponse,
+  PublicUser,
+  UpdatePasswordInput,
+  UpdateUserProfile,
+  UserProfile
+} from "@nexttalk/shared";
 
 class UserService {
-  private toProfileDto(user: {
-    id?: string;
-    _id?: { toString(): string };
-    fullName: string;
-    email: string;
-    role?: "user" | "admin";
-    status?: "active" | "inactive";
-    profileImageUrl?: string | null;
-  }): UserProfileDto {
+  private toProfileDto(user: any): UserProfile {
     const id = user.id ?? user._id?.toString() ?? "";
 
     return {
       id,
-      fullName: user.fullName,
+      username: user.username,
       email: user.email,
       role: user.role ?? "user",
-      status: user.status ?? "active",
-      profileImageUrl: user.profileImageUrl ?? null
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
+      avatarUrl: user.avatarUrl ?? null,
+      focusMode: user.focusMode ?? false,
+      status: {
+        state: user.status?.state ?? "offline",
+        lastSeenAt: user.status?.lastSeenAt?.toISOString() ?? new Date().toISOString()
+      }
     };
   }
 
-  async getMe(userId: string): Promise<UserProfileDto> {
+  private toPublicDto(user: any): PublicUser {
+    const id = user.id ?? user._id?.toString() ?? "";
+    return {
+      id,
+      username: user.username,
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
+      avatarUrl: user.avatarUrl ?? null,
+      status: { state: user.status?.state ?? "offline" }
+    };
+  }
+
+  async getMe(userId: string): Promise<UserProfile> {
     const user = await userRepository.findById(userId);
 
     if (!user) {
@@ -42,7 +54,7 @@ class UserService {
     return this.toProfileDto(user);
   }
 
-  async updateMe(userId: string, input: UpdateUserProfileDto): Promise<UserProfileDto> {
+  async updateMe(userId: string, input: UpdateUserProfile): Promise<UserProfile> {
     const existingUser = await userRepository.findById(userId);
 
     if (!existingUser) {
@@ -72,14 +84,16 @@ class UserService {
     return this.toProfileDto(updatedUser);
   }
 
-  async listUsers(input: { page: number; limit: number; search?: string }): Promise<AdminUserListResponseDto> {
+  async listUsers(input: { page: number; limit: number; search?: string }): Promise<AdminUserListResponse> {
     const page = Math.max(1, input.page);
     const limit = Math.min(Math.max(1, input.limit), 100);
     const search = input.search?.trim();
     const query = search
       ? {
           $or: [
-            { fullName: { $regex: search, $options: "i" } },
+            { username: { $regex: search, $options: "i" } },
+            { firstName: { $regex: search, $options: "i" } },
+            { lastName: { $regex: search, $options: "i" } },
             { email: { $regex: search, $options: "i" } }
           ]
         }
@@ -109,7 +123,7 @@ class UserService {
     };
   }
 
-  async getUserById(userId: string): Promise<UserProfileDto & { createdAt: string; updatedAt: string }> {
+  async getUserById(userId: string): Promise<UserProfile & { createdAt: string; updatedAt: string }> {
     const user = await userRepository.findById(userId);
 
     if (!user) {
@@ -125,7 +139,7 @@ class UserService {
     };
   }
 
-  async createUser(input: AdminCreateUserDto): Promise<UserProfileDto & { createdAt: string; updatedAt: string }> {
+  async createUser(input: AdminCreateUserInput): Promise<UserProfile & { createdAt: string; updatedAt: string }> {
     const existingUser = await userRepository.findByEmail(input.email);
 
     if (existingUser) {
@@ -134,14 +148,24 @@ class UserService {
       throw error;
     }
 
+    const existingUsername = await userRepository.findByUsername(input.username);
+
+    if (existingUsername) {
+      const error = new Error("Username already exists");
+      (error as Error & { statusCode?: number }).statusCode = 409;
+      throw error;
+    }
+
     const hashedPassword = await bcrypt.hash(input.password, 12);
     const user = await userRepository.create({
-      fullName: input.fullName,
+      username: input.username,
       email: input.email,
       password: hashedPassword,
       role: input.role ?? "user",
-      status: input.status ?? "active",
-      profileImageUrl: input.profileImageUrl ?? null
+      firstName: input.firstName ?? null,
+      lastName: input.lastName ?? null,
+      avatarUrl: input.avatarUrl ?? null,
+      status: input.status
     });
 
     return {
@@ -153,8 +177,8 @@ class UserService {
 
   async updateUser(
     userId: string,
-    input: AdminUpdateUserDto
-  ): Promise<UserProfileDto & { createdAt: string; updatedAt: string }> {
+    input: AdminUpdateUserInput
+  ): Promise<UserProfile & { createdAt: string; updatedAt: string }> {
     const existingUser = await userRepository.findById(userId);
 
     if (!existingUser) {
@@ -173,12 +197,24 @@ class UserService {
       }
     }
 
-    const payload: AdminUpdateUserDto = {
-      fullName: input.fullName,
+    if (input.username) {
+      const duplicateUsernameUser = await userRepository.findByUsername(input.username);
+
+      if (duplicateUsernameUser && duplicateUsernameUser.id !== userId) {
+        const error = new Error("Username already exists");
+        (error as Error & { statusCode?: number }).statusCode = 409;
+        throw error;
+      }
+    }
+
+    const payload: any = {
+      username: input.username,
       email: input.email,
       role: input.role,
-      status: input.status,
-      profileImageUrl: input.profileImageUrl
+      firstName: input.firstName,
+      lastName: input.lastName,
+      avatarUrl: input.avatarUrl,
+      status: input.status
     };
 
     if (input.password) {
@@ -210,13 +246,7 @@ class UserService {
     }
   }
 
-  async updatePassword(userId: string, input: { currentPassword?: string; newPassword?: string }): Promise<void> {
-    if (!input.currentPassword || !input.newPassword) {
-      const error = new Error("Current and new passwords are required");
-      (error as Error & { statusCode?: number }).statusCode = 400;
-      throw error;
-    }
-
+  async updatePassword(userId: string, input: UpdatePasswordInput): Promise<void> {
     const userQuery = userRepository.findById(userId);
     const user = await userQuery.select("+password");
 
@@ -255,6 +285,42 @@ class UserService {
     const hashedPassword = await bcrypt.hash(input.newPassword, 12);
     user.password = hashedPassword;
     await user.save();
+  }
+
+  /**
+   * Search users by username prefix/substring.
+   * Returns a slim public profile — email is intentionally excluded.
+   */
+  async searchByUsername(
+    query: string,
+    requestingUserId: string,
+    limit = 20
+  ): Promise<PublicUser[]> {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    const users = await userRepository
+      .findList({
+        username: { $regex: trimmed, $options: "i" },
+        _id: { $ne: requestingUserId } // exclude self
+      })
+      .limit(limit)
+      .select("username firstName lastName avatarUrl status");
+
+    return users.map((u) => this.toPublicDto(u));
+  }
+
+  /** Toggle focus mode on / off for the authenticated user. */
+  async setFocusMode(userId: string, enabled: boolean): Promise<UserProfile> {
+    const user = await userRepository.updateById(userId, { focusMode: enabled } as any);
+
+    if (!user) {
+      const error = new Error("User not found");
+      (error as Error & { statusCode?: number }).statusCode = 404;
+      throw error;
+    }
+
+    return this.toProfileDto(user);
   }
 }
 

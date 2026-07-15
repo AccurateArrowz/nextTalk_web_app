@@ -1,44 +1,33 @@
 import { Schema, model } from "mongoose";
-import type { UserDocument } from "@interfaces/user.interface.js";
+import type { UserDocument } from "@features/users/user.interface.js";
 
 const userSchema = new Schema<UserDocument>(
   {
-    fullName: {
-      type: String,
-      required: true,
-      trim: true
-    },
+    username: { type: String, required: true, unique: true, trim: true },
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
-      trim: true
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
-    password: {
-      type: String,
-      required: true,
-      minlength: 8,
-      select: false
-    },
+    password: { type: String, required: true, select: false },
     role: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user"
+      enum: ["user", "platformAdmin"],
+      default: "user",
     },
+    firstName: { type: String, trim: true, default: null },
+    lastName: { type: String, trim: true, default: null },
+    avatarUrl: { type: String, default: null },
     status: {
-      type: String,
-      enum: ["active", "inactive"],
-      default: "active"
+      state: { type: String, enum: ["online", "offline", "away"], default: "offline" },
+      lastSeenAt: { type: Date, default: Date.now },
     },
-    profileImageUrl: {
-      type: String,
-      default: null
-    }
+    focusMode: { type: Boolean, default: false },
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 export const UserModel = model<UserDocument>("User", userSchema);

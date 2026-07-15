@@ -4,6 +4,10 @@ import path from "node:path";
 import fs from "node:fs";
 import type { AuthenticatedRequest } from "@middleware/require-auth.js";
 import { userService } from "@features/users/user.service.js";
+import {
+  updatePasswordSchema,
+  updateUserProfileSchema
+} from "@nexttalk/shared";
 
 const uploadsDir = path.resolve(process.cwd(), "uploads");
 
@@ -49,11 +53,9 @@ export async function getMe(req: AuthenticatedRequest, res: Response, next: Next
 export async function patchMe(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     const file = req.file as Express.Multer.File | undefined;
-    const profileImageUrl = file ? `/uploads/${file.filename}` : undefined;
-    const result = await userService.updateMe(req.authUserId as string, {
-      ...req.body,
-      profileImageUrl
-    });
+    const avatarUrl = file ? `/uploads/${file.filename}` : undefined;
+    const input = updateUserProfileSchema.parse({ ...req.body, avatarUrl });
+    const result = await userService.updateMe(req.authUserId as string, input);
 
     res.status(200).json({
       message: "Profile updated successfully",
@@ -66,10 +68,31 @@ export async function patchMe(req: AuthenticatedRequest, res: Response, next: Ne
 
 export async function updatePassword(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    await userService.updatePassword(req.authUserId as string, req.body);
+    const input = updatePasswordSchema.parse(req.body);
+    await userService.updatePassword(req.authUserId as string, input);
     res.status(200).json({
       message: "Password updated successfully"
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function searchUsers(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const q = (req.query.q as string | undefined) ?? "";
+    const results = await userService.searchByUsername(q, req.authUserId as string);
+    res.status(200).json({ users: results });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateFocusMode(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const enabled = Boolean(req.body.enabled);
+    const user = await userService.setFocusMode(req.authUserId as string, enabled);
+    res.status(200).json({ message: `Focus mode ${enabled ? "enabled" : "disabled"}`, user });
   } catch (error) {
     next(error);
   }

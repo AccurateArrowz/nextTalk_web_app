@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { refreshTokenCookieName } from "@config/cookies.js";
 import { authService } from "@features/auth/auth.service.js";
+import { loginUserSchema, registerUserSchema } from "@nexttalk/shared";
 
 function setRefreshTokenCookie(res: Response, token: string) {
   res.cookie(refreshTokenCookieName, token, {
@@ -36,7 +37,8 @@ function readCookieValue(cookieHeader: string | undefined, name: string) {
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await authService.register(req.body);
+    const input = registerUserSchema.parse(req.body);
+    const result = await authService.register(input);
     setRefreshTokenCookie(res, authService.generateRefreshToken(result.user.id, result.user.email));
     res.status(201).json({
       message: result.message,
@@ -50,7 +52,8 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await authService.login(req.body);
+    const input = loginUserSchema.parse(req.body);
+    const result = await authService.login(input);
     setRefreshTokenCookie(res, authService.generateRefreshToken(result.user.id, result.user.email));
     res.status(200).json({
       message: result.message,

@@ -11,7 +11,7 @@ type AuthPayload = {
 
 export type AuthenticatedRequest = Request & {
   authUserId?: string;
-  authUserRole?: "user" | "admin";
+  authUserRole?: "user" | "platformAdmin";
   file?: Express.Multer.File;
 };
 
@@ -28,7 +28,7 @@ export async function requireAuth(req: AuthenticatedRequest, _res: Response, nex
   }
 
   try {
-    const payload = jwt.verify(token, jwtConfig.secret) as AuthPayload;
+    const payload = jwt.verify(token, jwtConfig.accessSecret) as AuthPayload;
 
     if (payload.kind !== "access" || !payload.sub) {
       throw new Error("Invalid token");
@@ -51,7 +51,7 @@ export async function requireAuth(req: AuthenticatedRequest, _res: Response, nex
 }
 
 export function requireAdmin(req: AuthenticatedRequest, _res: Response, next: NextFunction) {
-  if (req.authUserRole !== "admin") {
+  if (req.authUserRole !== "platformAdmin") {
     const error = new Error("Admin access required");
     (error as Error & { statusCode?: number }).statusCode = 403;
     next(error);

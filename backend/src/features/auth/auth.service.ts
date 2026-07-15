@@ -3,7 +3,12 @@ import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import { jwtConfig } from "@config/jwt.js";
 import { userRepository } from "@features/users/user.repository.js";
-import type { AuthResponseDto, LoginUserDto, RefreshResponseDto, RegisterUserDto } from "@features/auth/auth.dto.js";
+import type {
+  AuthResponse,
+  LoginUserInput,
+  RefreshResponse,
+  RegisterUserInput
+} from "@nexttalk/shared";
 
 type TokenKind = "access" | "refresh";
 
@@ -15,7 +20,7 @@ type TokenPayload = {
 };
 
 class AuthService {
-  async register(input: RegisterUserDto): Promise<AuthResponseDto> {
+  async register(input: RegisterUserInput): Promise<AuthResponse> {
     const existingUser = await userRepository.findByEmail(input.email);
 
     if (existingUser) {
@@ -24,11 +29,20 @@ class AuthService {
       throw error;
     }
 
+    const existingUsername = await userRepository.findByUsername(input.username);
+    if (existingUsername) {
+      const error = new Error("Username already exists");
+      (error as Error & { statusCode?: number }).statusCode = 409;
+      throw error;
+    }
+
     const hashedPassword = await bcrypt.hash(input.password, 12);
     const user = await userRepository.create({
-      fullName: input.fullName,
+      username: input.username,
       email: input.email,
-      password: hashedPassword
+      password: hashedPassword,
+      firstName: input.firstName ?? null,
+      lastName: input.lastName ?? null
     });
 
     const accessToken = this.generateAccessToken(user.id, user.email);
@@ -37,17 +51,22 @@ class AuthService {
       message: "User registered successfully",
       user: {
         id: user.id,
-        fullName: user.fullName,
+        username: user.username,
         email: user.email,
-        role: user.role,
-        status: user.status,
-        profileImageUrl: user.profileImageUrl ?? null
+        role: user.role ?? "user",
+        firstName: user.firstName ?? null,
+        lastName: user.lastName ?? null,
+        avatarUrl: user.avatarUrl ?? null,
+        status: {
+          state: user.status?.state ?? "offline",
+          lastSeenAt: user.status?.lastSeenAt?.toISOString() ?? new Date().toISOString()
+        }
       },
       accessToken
     };
   }
 
-  async login(input: LoginUserDto): Promise<AuthResponseDto> {
+  async login(input: LoginUserInput): Promise<AuthResponse> {
     if (!input?.email || !input?.password) {
       const error = new Error("Email and password are required");
       (error as Error & { statusCode?: number }).statusCode = 400;
@@ -77,17 +96,22 @@ class AuthService {
       message: "Login successful",
       user: {
         id: user.id,
-        fullName: user.fullName,
+        username: user.username,
         email: user.email,
-        role: user.role,
-        status: user.status,
-        profileImageUrl: user.profileImageUrl ?? null
+        role: user.role ?? "user",
+        firstName: user.firstName ?? null,
+        lastName: user.lastName ?? null,
+        avatarUrl: user.avatarUrl ?? null,
+        status: {
+          state: user.status?.state ?? "offline",
+          lastSeenAt: user.status?.lastSeenAt?.toISOString() ?? new Date().toISOString()
+        }
       },
       accessToken
     };
   }
 
-  async refreshFromToken(token: string): Promise<RefreshResponseDto> {
+  async refreshFromToken(token: string): Promise<RefreshResponse> {
     const payload = this.verifyRefreshToken(token);
     const user = await userRepository.findById(payload.sub);
 
@@ -101,11 +125,16 @@ class AuthService {
       message: "Session refreshed successfully",
       user: {
         id: user.id,
-        fullName: user.fullName,
+        username: user.username,
         email: user.email,
-        role: user.role,
-        status: user.status,
-        profileImageUrl: user.profileImageUrl ?? null
+        role: user.role ?? "user",
+        firstName: user.firstName ?? null,
+        lastName: user.lastName ?? null,
+        avatarUrl: user.avatarUrl ?? null,
+        status: {
+          state: user.status?.state ?? "offline",
+          lastSeenAt: user.status?.lastSeenAt?.toISOString() ?? new Date().toISOString()
+        }
       },
       accessToken: this.generateAccessToken(user.id, user.email)
     };
@@ -119,7 +148,7 @@ class AuthService {
         kind: "refresh",
         jti: crypto.randomUUID()
       } satisfies TokenPayload,
-      jwtConfig.secret,
+      jwtConfig.refreshSecret,
       {
         expiresIn: jwtConfig.refreshTokenExpiresIn
       }
@@ -133,7 +162,7 @@ class AuthService {
         email,
         kind: "access"
       } satisfies TokenPayload,
-      jwtConfig.secret,
+      jwtConfig.accessSecret,
       {
         expiresIn: jwtConfig.accessTokenExpiresIn
       }
@@ -141,7 +170,7 @@ class AuthService {
   }
 
   private verifyRefreshToken(token: string) {
-    const payload = jwt.verify(token, jwtConfig.secret) as TokenPayload;
+    const payload = jwt.verify(token, jwtConfig.refreshSecret) as TokenPayload;
 
     if (payload.kind !== "refresh" || !payload.sub || !payload.email) {
       const error = new Error("Invalid refresh token");

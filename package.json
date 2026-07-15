@@ -1,0 +1,8 @@
+{
+  "name": "nexttalk-web-app",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "shared"
+  ]
+}
