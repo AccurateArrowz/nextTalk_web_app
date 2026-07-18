@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { refreshTokenCookieName } from "@config/cookies.js";
 import { authService } from "@features/auth/auth.service.js";
-import { loginUserSchema, registerUserSchema } from "@nexttalk/shared";
+import type { LoginUserInput, RegisterUserInput } from "@nexttalk/shared";
 
 function setRefreshTokenCookie(res: Response, token: string) {
   res.cookie(refreshTokenCookieName, token, {
@@ -35,10 +35,13 @@ function readCookieValue(cookieHeader: string | undefined, name: string) {
   return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : undefined;
 }
 
-export async function register(req: Request, res: Response, next: NextFunction) {
+export async function register(
+  req: Request<{}, unknown, RegisterUserInput>,
+  res: Response,
+  next: NextFunction
+) {
   try {
-    const input = registerUserSchema.parse(req.body);
-    const result = await authService.register(input);
+    const result = await authService.register(req.body);
     setRefreshTokenCookie(res, authService.generateRefreshToken(result.user.id, result.user.email));
     res.status(201).json({
       message: result.message,
@@ -50,10 +53,13 @@ export async function register(req: Request, res: Response, next: NextFunction) 
   }
 }
 
-export async function login(req: Request, res: Response, next: NextFunction) {
+export async function login(
+  req: Request<{}, unknown, LoginUserInput>,
+  res: Response,
+  next: NextFunction
+) {
   try {
-    const input = loginUserSchema.parse(req.body);
-    const result = await authService.login(input);
+    const result = await authService.login(req.body);
     setRefreshTokenCookie(res, authService.generateRefreshToken(result.user.id, result.user.email));
     res.status(200).json({
       message: result.message,

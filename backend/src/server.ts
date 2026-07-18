@@ -11,8 +11,8 @@ const httpServer = createServer(app);
 
 initSocketServer(httpServer);
 
-httpServer.listen(env.port, () => {
+httpServer.listen(env.port, "0.0.0.0", () => {
   // Keep startup logging simple and explicit.
-  console.log(`Server listening on http://localhost:${env.port}`);
+  console.log(`Server listening on http://0.0.0.0:${env.port}`);
   console.log(`CORS allowed origins:`, env.clientOrigins);
 });
