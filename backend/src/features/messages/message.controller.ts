@@ -1,6 +1,7 @@
 import type { NextFunction, Response } from "express";
 import type { AuthenticatedRequest } from "@middleware/require-auth.js";
 import { messageService } from "@features/messages/message.service.js";
+import { sendSuccess } from "@utils/response.js";
 
 function getParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -19,7 +20,7 @@ export async function sendMessage(
     };
 
     if (!content || content.trim() === "") {
-      res.status(400).json({ message: "content is required" });
+      res.status(400).json({ success: false, message: "content is required" });
       return;
     }
 
@@ -29,7 +30,7 @@ export async function sendMessage(
       type: type ?? "text"
     });
 
-    res.status(201).json({ message });
+    sendSuccess(res, { message }, "Message sent", 201);
   } catch (error) {
     next(error);
   }
@@ -46,7 +47,7 @@ export async function markMessageRead(
       req.authUserId as string,
       getParamValue(req.params.messageId) as string
     );
-    res.status(200).json({ message: "Message marked as read" });
+    sendSuccess(res, null, "Message marked as read");
   } catch (error) {
     next(error);
   }

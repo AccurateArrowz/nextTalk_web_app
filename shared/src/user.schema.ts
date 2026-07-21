@@ -1,16 +1,5 @@
 import { z } from "zod";
-import { userStatusSchema } from "./auth.js";
-
-export const publicUserSchema = z.object({
-  id: z.string(),
-  username: z.string(),
-  firstName: z.string().nullable(),
-  lastName: z.string().nullable(),
-  avatarUrl: z.string().nullable(),
-  status: z.object({
-    state: z.enum(["online", "offline", "away"])
-  })
-});
+import { userStatusSchema } from "./auth.schema.js";
 
 export const userProfileSchema = z.object({
   id: z.string(),
@@ -24,6 +13,18 @@ export const userProfileSchema = z.object({
   status: z.object({
     state: z.enum(["online", "offline", "away"]),
     lastSeenAt: z.string()
+  })
+});
+
+export const publicUserSchema = userProfileSchema.pick({
+  id: true,
+  username: true,
+  firstName: true,
+  lastName: true,
+  avatarUrl: true
+}).extend({
+  status: z.object({
+    state: z.enum(["online", "offline", "away"])
   })
 });
 
@@ -63,9 +64,7 @@ export const adminCreateUserSchema = z.object({
   }).optional()
 });
 
-export const adminUpdateUserSchema = adminCreateUserSchema.partial().extend({
-  password: z.string().min(8).optional()
-});
+export const adminUpdateUserSchema = adminCreateUserSchema.partial();
 
 export const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1),

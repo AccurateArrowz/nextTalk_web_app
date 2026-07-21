@@ -1,7 +1,9 @@
-export * from "./auth.js";
-export * from "./user.js";
-export * from "./health.js";
-export * from "./conversation.js";
-export * from "./message.js";
-export * from "./friendship.js";
+export * from "./auth.schema.js";
+export * from "./user.schema.js";
+export * from "./health.schema.js";
+export * from "./conversation.schema.js";
+export * from "./message.schema.js";
+export * from "./friendship.schema.js";
+export * from "./api.schema.js";
 export type * from "./types.js";
+

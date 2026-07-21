@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import type { AuthenticatedRequest } from "@middleware/require-auth.js";
 import { userService } from "@features/users/user.service.js";
+import { sendSuccess } from "@utils/response.js";
 import {
   updatePasswordSchema,
   updateUserProfileSchema
@@ -44,7 +45,7 @@ export const profileImageUpload = multer({
 export async function getMe(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     const result = await userService.getMe(req.authUserId as string);
-    res.status(200).json({ user: result });
+    sendSuccess(res, { user: result });
   } catch (error) {
     next(error);
   }
@@ -57,10 +58,7 @@ export async function patchMe(req: AuthenticatedRequest, res: Response, next: Ne
     const input = updateUserProfileSchema.parse({ ...req.body, avatarUrl });
     const result = await userService.updateMe(req.authUserId as string, input);
 
-    res.status(200).json({
-      message: "Profile updated successfully",
-      user: result
-    });
+    sendSuccess(res, { user: result }, "Profile updated successfully");
   } catch (error) {
     next(error);
   }
@@ -70,9 +68,7 @@ export async function updatePassword(req: AuthenticatedRequest, res: Response, n
   try {
     const input = updatePasswordSchema.parse(req.body);
     await userService.updatePassword(req.authUserId as string, input);
-    res.status(200).json({
-      message: "Password updated successfully"
-    });
+    sendSuccess(res, null, "Password updated successfully");
   } catch (error) {
     next(error);
   }
@@ -82,7 +78,7 @@ export async function searchUsers(req: AuthenticatedRequest, res: Response, next
   try {
     const q = (req.query.q as string | undefined) ?? "";
     const results = await userService.searchByUsername(q, req.authUserId as string);
-    res.status(200).json({ users: results });
+    sendSuccess(res, { users: results });
   } catch (error) {
     next(error);
   }
@@ -92,7 +88,7 @@ export async function updateFocusMode(req: AuthenticatedRequest, res: Response, 
   try {
     const enabled = Boolean(req.body.enabled);
     const user = await userService.setFocusMode(req.authUserId as string, enabled);
-    res.status(200).json({ message: `Focus mode ${enabled ? "enabled" : "disabled"}`, user });
+    sendSuccess(res, { user }, `Focus mode ${enabled ? "enabled" : "disabled"}`);
   } catch (error) {
     next(error);
   }

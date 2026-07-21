@@ -22,9 +22,24 @@ The auth flow also sets a refresh token as an `HttpOnly` cookie named `refreshTo
 
 ### Common response shape
 
-- Success responses are JSON objects.
-- Errors are returned with an Express error handler and usually include a message.
-- Authenticated requests reuse the same JSON response style across the service.
+Most feature endpoints use a standard JSON envelope:
+
+```json
+{
+  "success": true,
+  "data": {},
+  "message": "optional"
+}
+```
+
+Errors use:
+
+```json
+{
+  "success": false,
+  "message": "What went wrong"
+}
+```
 
 ## HTTP Endpoints
 
@@ -165,7 +180,7 @@ All conversation routes require authentication.
 
 | Method | Path | Auth | Description |
 |---|---|---:|---|
-| `POST` | `/api/v1/conversations` | Yes | Create a direct chat or a group conversation. |
+| `POST` | `/api/v1/conversations` | Yes | Create a friend-gated direct chat or a group conversation. |
 | `GET` | `/api/v1/conversations` | Yes | List conversations for the current user. |
 | `GET` | `/api/v1/conversations/:id` | Yes | Get one conversation by id. |
 | `POST` | `/api/v1/conversations/:id/participants` | Yes | Invite a participant. |
@@ -186,6 +201,8 @@ Direct conversation:
 }
 ```
 
+The target user must already have an accepted friendship with the current user. Existing direct conversations also require the friendship to still be accepted before new messages can be sent.
+
 Group conversation:
 
 ```json
@@ -196,6 +213,8 @@ Group conversation:
 }
 ```
 
+The creator is added automatically as the group admin. `participantIds` are added as members, and every listed user must exist.
+
 #### Invite participant payload
 
 ```json
@@ -204,6 +223,8 @@ Group conversation:
 }
 ```
 
+Only group admins can invite or remove participants. New invited participants get `visibleFrom` set to their join time by default, so message history before that time is hidden from them.
+
 #### Update conversation settings payload
 
 ```json
@@ -211,6 +232,8 @@ Group conversation:
   "allowHistoryForNewMembers": true
 }
 ```
+
+Only group admins can update this setting. When enabled, new members can see previous messages; when disabled, future members only see messages from their join point. Enabling the setting also unlocks history for existing restricted members.
 
 #### Message history query params
 
@@ -223,12 +246,12 @@ limit=<number>
 
 | Method | Path | Auth | Description |
 |---|---|---:|---|
-| `GET` | `/api/v1/admin/users` | Yes, admin | List users. |
-| `GET` | `/api/v1/admin/users/:id` | Yes, admin | Get one user. |
-| `POST` | `/api/v1/admin/users` | Yes, admin | Create a user. |
-| `PUT` | `/api/v1/admin/users/:id` | Yes, admin | Replace user record. |
-| `PATCH` | `/api/v1/admin/users/:id` | Yes, admin | Update user record. |
-| `DELETE` | `/api/v1/admin/users/:id` | Yes, admin | Delete a user. |
+| `GET` | `/api/v1/admin/users` | Yes, platformAdmin | List users. |
+| `GET` | `/api/v1/admin/users/:id` | Yes, platformAdmin | Get one user. |
+| `POST` | `/api/v1/admin/users` | Yes, platformAdmin | Create a user. |
+| `PUT` | `/api/v1/admin/users/:id` | Yes, platformAdmin | Replace user record. |
+| `PATCH` | `/api/v1/admin/users/:id` | Yes, platformAdmin | Update user record. |
+| `DELETE` | `/api/v1/admin/users/:id` | Yes, platformAdmin | Delete a user. |
 
 ### 6. Health
 

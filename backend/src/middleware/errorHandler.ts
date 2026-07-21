@@ -15,6 +15,7 @@ export function errorHandler(
     err instanceof Error ? err.message : "Internal server error";
 
   res.status(statusCode).json({
+    success: false,
     message
   });
 }

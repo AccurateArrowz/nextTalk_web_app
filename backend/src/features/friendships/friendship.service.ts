@@ -70,6 +70,17 @@ class FriendshipService {
     return this.toDto(friendship);
   }
 
+  async areFriends(userId: string, friendId: string): Promise<boolean> {
+    const friendship = await FriendshipModel.exists({
+      $or: [
+        { userId, friendId, status: "accepted" },
+        { userId: friendId, friendId: userId, status: "accepted" }
+      ]
+    });
+
+    return Boolean(friendship);
+  }
+
   /**
    * Accept or decline a pending incoming friend request.
    * Only the recipient (the non-sender side) may respond.

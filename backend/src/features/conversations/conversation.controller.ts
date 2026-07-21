@@ -1,6 +1,7 @@
 import type { NextFunction, Response } from "express";
 import type { AuthenticatedRequest } from "@middleware/require-auth.js";
 import { conversationService } from "@features/conversations/conversation.service.js";
+import { sendSuccess } from "@utils/response.js";
 
 function getParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -22,20 +23,26 @@ export async function createConversation(
 
     if (type === "direct") {
       if (!targetUserId) {
-        res.status(400).json({ message: "targetUserId is required for direct conversations" });
+        res.status(400).json({
+          success: false,
+          message: "targetUserId is required for direct conversations"
+        });
         return;
       }
       const conversation = await conversationService.getOrCreateDirect(
         req.authUserId as string,
         targetUserId
       );
-      res.status(200).json({ conversation });
+      sendSuccess(res, { conversation });
       return;
     }
 
     // group
     if (!name || !participantIds || !Array.isArray(participantIds)) {
-      res.status(400).json({ message: "name and participantIds are required for group conversations" });
+      res.status(400).json({
+        success: false,
+        message: "name and participantIds are required for group conversations"
+      });
       return;
     }
 
@@ -43,7 +50,7 @@ export async function createConversation(
       name,
       participantIds
     });
-    res.status(201).json({ conversation });
+    sendSuccess(res, { conversation }, "Conversation created", 201);
   } catch (error) {
     next(error);
   }
@@ -57,7 +64,7 @@ export async function listConversations(
 ) {
   try {
     const conversations = await conversationService.listForUser(req.authUserId as string);
-    res.status(200).json({ conversations });
+    sendSuccess(res, { conversations });
   } catch (error) {
     next(error);
   }
@@ -74,7 +81,7 @@ export async function getConversation(
       req.authUserId as string,
       getParamValue(req.params.id) as string
     );
-    res.status(200).json({ conversation });
+    sendSuccess(res, { conversation });
   } catch (error) {
     next(error);
   }
@@ -89,7 +96,7 @@ export async function inviteParticipant(
   try {
     const { userId: targetUserId } = req.body as { userId?: string };
     if (!targetUserId) {
-      res.status(400).json({ message: "userId is required" });
+      res.status(400).json({ success: false, message: "userId is required" });
       return;
     }
     const conversation = await conversationService.inviteParticipant(
@@ -97,7 +104,7 @@ export async function inviteParticipant(
       getParamValue(req.params.id) as string,
       targetUserId
     );
-    res.status(200).json({ message: "Participant invited", conversation });
+    sendSuccess(res, { conversation }, "Participant invited");
   } catch (error) {
     next(error);
   }
@@ -115,7 +122,7 @@ export async function removeParticipant(
       getParamValue(req.params.id) as string,
       getParamValue(req.params.userId) as string
     );
-    res.status(200).json({ message: "Participant removed", conversation });
+    sendSuccess(res, { conversation }, "Participant removed");
   } catch (error) {
     next(error);
   }
@@ -130,7 +137,10 @@ export async function updateConversationSettings(
   try {
     const { allowHistoryForNewMembers } = req.body as { allowHistoryForNewMembers?: boolean };
     if (typeof allowHistoryForNewMembers !== "boolean") {
-      res.status(400).json({ message: "allowHistoryForNewMembers (boolean) is required" });
+      res.status(400).json({
+        success: false,
+        message: "allowHistoryForNewMembers (boolean) is required"
+      });
       return;
     }
     const conversation = await conversationService.toggleHistoryAccess(
@@ -138,10 +148,11 @@ export async function updateConversationSettings(
       getParamValue(req.params.id) as string,
       allowHistoryForNewMembers
     );
-    res.status(200).json({
-      message: `History access ${allowHistoryForNewMembers ? "enabled" : "disabled"}`,
-      conversation
-    });
+    sendSuccess(
+      res,
+      { conversation },
+      `History access ${allowHistoryForNewMembers ? "enabled" : "disabled"}`
+    );
   } catch (error) {
     next(error);
   }
@@ -162,7 +173,7 @@ export async function getMessages(
       getParamValue(req.params.id) as string,
       { before, limit }
     );
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (error) {
     next(error);
   }

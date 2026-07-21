@@ -1,4 +1,5 @@
 import type { Document, Types } from "mongoose";
+import { conversationSchema } from "@nexttalk/shared";
 
 export type ConversationParticipant = {
   userId: string;

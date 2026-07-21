@@ -1,5 +1,6 @@
 import { ConversationModel } from "@features/conversations/conversation.model.js";
 import { MessageModel } from "@features/messages/message.model.js";
+import { friendshipService } from "@features/friendships/friendship.service.js";
 import { userRepository } from "@features/users/user.repository.js";
 import type { Types } from "mongoose";
 import type {
@@ -114,6 +115,16 @@ class ConversationService {
       throw err;
     }
 
+    const existingUsers = await userRepository
+      .findList({ _id: { $in: uniqueIds } })
+      .select("_id");
+
+    if (existingUsers.length !== uniqueIds.length) {
+      const err = new Error("One or more participants were not found");
+      (err as any).statusCode = 404;
+      throw err;
+    }
+
     const participants = uniqueIds.map((id) => ({
       userId: id,
       role: id === creatorId ? ("admin" as const) : ("member" as const),
@@ -146,6 +157,13 @@ class ConversationService {
     if (!target) {
       const err = new Error("Target user not found");
       (err as any).statusCode = 404;
+      throw err;
+    }
+
+    const areFriends = await friendshipService.areFriends(userId, targetUserId);
+    if (!areFriends) {
+      const err = new Error("You can only message users after they accept your friend request");
+      (err as any).statusCode = 403;
       throw err;
     }
 
@@ -278,6 +296,12 @@ class ConversationService {
       throw err;
     }
 
+    if (conversation.participants.length < 2) {
+      const err = new Error("A group conversation needs at least 2 participants");
+      (err as any).statusCode = 400;
+      throw err;
+    }
+
     await conversation.save();
     return toConversationDto(conversation);
   }
@@ -353,9 +377,15 @@ class ConversationService {
     // Cursor pagination: fetch messages older than `before` id
     if (options.before) {
       const cursorDoc = await MessageModel.findById(options.before);
-      if (cursorDoc) {
-        query._id = { $lt: cursorDoc._id };
+      if (!cursorDoc || cursorDoc.conversationId.toString() !== conversationId) {
+        const err = new Error("Message cursor not found");
+        (err as any).statusCode = 404;
+        throw err;
       }
+      query.createdAt = {
+        ...(query.createdAt ?? {}),
+        $lt: cursorDoc.createdAt
+      };
     }
 
     const messages = await MessageModel.find(query)

@@ -1,5 +1,6 @@
 import { MessageModel } from "@features/messages/message.model.js";
 import { ConversationModel } from "@features/conversations/conversation.model.js";
+import { friendshipService } from "@features/friendships/friendship.service.js";
 import { getSocketServer } from "../../socket.js";
 import type { Message, SendMessageInput } from "@features/messages/message.interface.js";
 
@@ -51,6 +52,22 @@ class MessageService {
       throw err;
     }
 
+    if (conversation.type === "direct") {
+      const recipient = conversation.participants.find(
+        (participant: any) => participant.userId.toString() !== senderId
+      );
+
+      const areFriends = recipient
+        ? await friendshipService.areFriends(senderId, recipient.userId.toString())
+        : false;
+
+      if (!areFriends) {
+        const err = new Error("You can only message users while you are friends");
+        (err as any).statusCode = 403;
+        throw err;
+      }
+    }
+
     const message = await MessageModel.create({
       conversationId: input.conversationId,
       senderId,
@@ -84,6 +101,27 @@ class MessageService {
   async markAsRead(userId: string, messageId: string): Promise<void> {
     const message = await MessageModel.findById(messageId);
     if (!message) {
+      const err = new Error("Message not found");
+      (err as any).statusCode = 404;
+      throw err;
+    }
+
+    const conversation = await ConversationModel.findOne({
+      _id: message.conversationId,
+      "participants.userId": userId
+    });
+
+    if (!conversation) {
+      const err = new Error("Conversation not found or you are not a member");
+      (err as any).statusCode = 404;
+      throw err;
+    }
+
+    const participant = conversation.participants.find(
+      (p: any) => p.userId.toString() === userId
+    );
+
+    if (participant?.visibleFrom && message.createdAt < participant.visibleFrom) {
       const err = new Error("Message not found");
       (err as any).statusCode = 404;
       throw err;

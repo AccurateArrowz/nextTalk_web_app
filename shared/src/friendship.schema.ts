@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { presenceStateSchema } from "./conversation.js";
+import { presenceStateSchema } from "./conversation.schema.js";
 
 export const friendshipSchema = z.object({
   id: z.string(),
