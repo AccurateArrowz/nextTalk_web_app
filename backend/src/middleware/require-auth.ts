@@ -2,12 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { jwtConfig } from "@config/jwt.js";
 import { userRepository } from "@features/users/user.repository.js";
-
-type AuthPayload = {
-  sub?: string;
-  email?: string;
-  kind?: "access" | "refresh";
-};
+import { TokenPayload } from "@features/auth/auth.types.js";
 
 export type AuthenticatedRequest = Request & {
   authUserId?: string;
@@ -28,9 +23,9 @@ export async function requireAuth(req: AuthenticatedRequest, _res: Response, nex
   }
 
   try {
-    const payload = jwt.verify(token, jwtConfig.accessSecret) as AuthPayload;
+    const payload = jwt.verify(token, jwtConfig.accessSecret) as TokenPayload;
 
-    if (payload.kind !== "access" || !payload.sub) {
+    if (payload.kind !== "access" ) {
       throw new Error("Invalid token");
     }
 

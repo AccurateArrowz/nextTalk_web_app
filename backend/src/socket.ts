@@ -5,12 +5,7 @@ import { jwtConfig } from "@config/jwt.js";
 import { env } from "@config/env.js";
 import { ConversationModel } from "@features/conversations/conversation.model.js";
 import { userRepository } from "@features/users/user.repository.js";
-
-type AuthPayload = {
-  sub?: string;
-  email?: string;
-  kind?: "access" | "refresh";
-};
+import { TokenPayload } from "@features/auth/auth.types.js";
 
 type AuthedSocket = Socket & {
   data: Socket["data"] & {
@@ -42,7 +37,7 @@ async function authenticateSocket(socket: Socket) {
     throw new Error("Authentication required");
   }
 
-  const payload = jwt.verify(token, jwtConfig.accessSecret) as AuthPayload;
+  const payload = jwt.verify(token, jwtConfig.accessSecret) as TokenPayload;
   if (payload.kind !== "access" || !payload.sub) {
     throw new Error("Invalid token");
   }

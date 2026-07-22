@@ -4,7 +4,7 @@ import type { Types } from "mongoose";
 import type {
   FriendPublicProfile,
   Friendship
-} from "@features/friendships/friendship.interface.js";
+} from "@features/friendships/friendship.types.js";
 
 class FriendshipService {
   private toDto(doc: any): Friendship {

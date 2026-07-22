@@ -6,8 +6,8 @@ import type { Types } from "mongoose";
 import type {
   Conversation,
   ConversationParticipant
-} from "@features/conversations/conversation.interface.js";
-import type { Message } from "@features/messages/message.interface.js";
+} from "@features/conversations/conversation.types.js";
+import type { Message } from "@features/messages/message.types.js";
 
 interface ConversationParticipantDoc {
   userId: Types.ObjectId | string;

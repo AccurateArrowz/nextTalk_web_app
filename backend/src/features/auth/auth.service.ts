@@ -9,15 +9,8 @@ import type {
   RefreshResponse,
   RegisterUserInput
 } from "@nexttalk/shared";
+import { TokenPayload } from "./auth.types.js";
 
-type TokenKind = "access" | "refresh";
-
-type TokenPayload = {
-  sub: string;
-  email: string;
-  kind: TokenKind;
-  jti?: string;
-};
 
 class AuthService {
   async register(input: RegisterUserInput): Promise<AuthResponse> {

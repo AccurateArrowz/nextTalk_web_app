@@ -2,7 +2,7 @@ import { MessageModel } from "@features/messages/message.model.js";
 import { ConversationModel } from "@features/conversations/conversation.model.js";
 import { friendshipService } from "@features/friendships/friendship.service.js";
 import { getSocketServer } from "../../socket.js";
-import type { Message, SendMessageInput } from "@features/messages/message.interface.js";
+import type { Message, SendMessageInput } from "@features/messages/message.types.js";
 
 interface MessageDocLike {
   _id: { toString(): string };
