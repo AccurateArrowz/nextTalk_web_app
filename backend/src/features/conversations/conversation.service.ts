@@ -4,9 +4,7 @@ import { friendshipService } from "@features/friendships/friendship.service.js";
 import { userRepository } from "@features/users/user.repository.js";
 import type { Types } from "mongoose";
 import type {
-  Conversation,
-  ConversationParticipant
-} from "@features/conversations/conversation.types.js";
+  IConversation} from "@features/conversations/conversation.types.js";
 import type { Message } from "@features/messages/message.types.js";
 
 interface ConversationParticipantDoc {
@@ -24,7 +22,7 @@ interface ConversationLastMessageDoc {
 
 interface ConversationDocLike {
   _id: Types.ObjectId | string;
-  type?: Conversation["type"];
+  type?: IConversation["type"];
   name?: string | null;
   avatarUrl?: string | null;
   allowHistoryForNewMembers?: boolean;
@@ -53,7 +51,7 @@ interface MessageDocLike {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function toConversationDto(doc: any): Conversation {
+function toConversationDto(doc: any): IConversation {
   return {
     id: doc._id.toString(),
     type: doc.type ?? "direct",
@@ -106,7 +104,7 @@ class ConversationService {
   async createGroup(
     creatorId: string,
     input: { name: string; participantIds: string[] }
-  ): Promise<Conversation> {
+  ): Promise<IConversation> {
     const uniqueIds = [...new Set([...input.participantIds, creatorId])];
 
     if (uniqueIds.length < 2) {
@@ -146,7 +144,7 @@ class ConversationService {
    * Get or create a direct (1-on-1) conversation between two users.
    * Uses the directKey unique index for idempotency.
    */
-  async getOrCreateDirect(userId: string, targetUserId: string): Promise<Conversation> {
+  async getOrCreateDirect(userId: string, targetUserId: string): Promise<IConversation> {
     if (userId === targetUserId) {
       const err = new Error("Cannot create a conversation with yourself");
       (err as any).statusCode = 400;
@@ -187,7 +185,7 @@ class ConversationService {
   }
 
   /** Return all conversations the user is a participant in, newest first. */
-  async listForUser(userId: string): Promise<Conversation[]> {
+  async listForUser(userId: string): Promise<IConversation[]> {
     const conversations = await ConversationModel.find({
       "participants.userId": userId
     }).sort({ updatedAt: -1 });
@@ -196,14 +194,14 @@ class ConversationService {
   }
 
   /** Get a single conversation by ID (must be a participant). */
-  async getById(userId: string, conversationId: string): Promise<Conversation> {
+  async getById(userId: string, conversationId: string): Promise<IConversation> {
     const conversation = await ConversationModel.findOne({
       _id: conversationId,
       "participants.userId": userId
     });
 
     if (!conversation) {
-      const err = new Error("Conversation not found");
+      const err = new Error("IConversation not found");
       (err as any).statusCode = 404;
       throw err;
     }
@@ -220,7 +218,7 @@ class ConversationService {
     adminId: string,
     conversationId: string,
     targetUserId: string
-  ): Promise<Conversation> {
+  ): Promise<IConversation> {
     const conversation = await ConversationModel.findById(conversationId);
 
     if (!conversation || conversation.type !== "group") {
@@ -268,7 +266,7 @@ class ConversationService {
     adminId: string,
     conversationId: string,
     targetUserId: string
-  ): Promise<Conversation> {
+  ): Promise<IConversation> {
     const conversation = await ConversationModel.findById(conversationId);
 
     if (!conversation || conversation.type !== "group") {
@@ -315,7 +313,7 @@ class ConversationService {
     adminId: string,
     conversationId: string,
     allow: boolean
-  ): Promise<Conversation> {
+  ): Promise<IConversation> {
     const conversation = await ConversationModel.findById(conversationId);
 
     if (!conversation || conversation.type !== "group") {

@@ -33,3 +33,6 @@ Required environment variables are defined in `src/config/env.ts`, including `PO
 - Keep route handlers thin and push business logic into services.
 - Use shared schemas for request validation in controllers.
 - Preserve existing feature folder names and route prefixes when adding endpoints.
+
+## Naming Conventions
+- file names are kebab-case, while the contents (interfaces, types, classes) inside use PascalCase, and variables/functions use camelCase

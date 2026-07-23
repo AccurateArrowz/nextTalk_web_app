@@ -1,37 +1,10 @@
 import { MessageModel } from "@features/messages/message.model.js";
 import { ConversationModel } from "@features/conversations/conversation.model.js";
 import { friendshipService } from "@features/friendships/friendship.service.js";
+import { userRepository } from "@features/users/user.repository.js";
 import { getSocketServer } from "../../socket.js";
 import type { Message, SendMessageInput } from "@features/messages/message.types.js";
 
-interface MessageDocLike {
-  _id: { toString(): string };
-  conversationId: { toString(): string };
-  senderId: { toString(): string };
-  type: Message["type"];
-  content: string;
-  readBy?: Array<{ userId: { toString(): string }; readAt?: Date }>;
-  deletedAt?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-function toDto(doc: MessageDocLike): Message {
-  return {
-    id: doc._id.toString(),
-    conversationId: doc.conversationId.toString(),
-    senderId: doc.senderId.toString(),
-    type: doc.type,
-    content: doc.content,
-    readBy: (doc.readBy ?? []).map((r: { userId: { toString(): string }; readAt?: Date }) => ({
-      userId: r.userId.toString(),
-      readAt: r.readAt?.toISOString() ?? new Date().toISOString()
-    })),
-    deletedAt: doc.deletedAt ? doc.deletedAt.toISOString() : null,
-    createdAt: doc.createdAt.toISOString(),
-    updatedAt: doc.updatedAt.toISOString()
-  };
-}
 
 class MessageService {
   /**
@@ -57,14 +30,18 @@ class MessageService {
         (participant: any) => participant.userId.toString() !== senderId
       );
 
-      const areFriends = recipient
-        ? await friendshipService.areFriends(senderId, recipient.userId.toString())
-        : false;
+      if (recipient) {
+        const recipientUser = await userRepository.findById(recipient.userId.toString());
+        const allowsNonFriends = recipientUser?.allowMessageFromNonFriends ?? true;
 
-      if (!areFriends) {
-        const err = new Error("You can only message users while you are friends");
-        (err as any).statusCode = 403;
-        throw err;
+        if (!allowsNonFriends) {
+          const areFriends = await friendshipService.areFriends(senderId, recipient.userId.toString());
+          if (!areFriends) {
+            const err = new Error("This user does not accept messages from non-friends");
+            (err as any).statusCode = 403;
+            throw err;
+          }
+        }
       }
     }
 
@@ -84,17 +61,15 @@ class MessageService {
     };
     await conversation.save();
 
-    const dto = toDto(message);
-
     // Real-time fan-out via Socket.IO
     try {
       const io = getSocketServer();
-      io.to(`conversation:${input.conversationId}`).emit("message:new", dto);
+      io.to(`conversation:${input.conversationId}`).emit("message:new", message);
     } catch {
       // Socket server may not be initialised in test environments — safe to ignore
     }
 
-    return dto;
+    return message;
   }
 
   /** Mark a message as read by the given user. */

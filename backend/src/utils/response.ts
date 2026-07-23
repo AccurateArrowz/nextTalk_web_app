@@ -1,13 +1,19 @@
 import type { Response } from "express";
-import type { Pagination } from "@nexttalk/shared";
-import type { ApiSuccessResponse } from "@nexttalk/shared";
-a
+import type {
+  Pagination,
+  ApiSuccessResponse,
+  ApiPaginatedResponse,
+  ApiErrorResponse,
+  ApiValidationErrorResponse,
+  ValidationErrorDetail,
+} from "@nexttalk/shared";
+
 export function sendSuccess<T>(
   res: Response,
   data: T,
   message?: string,
   statusCode = 200
-){
+): Response<ApiSuccessResponse<T>> {
   return res.status(statusCode).json({
     success: true,
     data,
@@ -20,7 +26,7 @@ export function sendPaginated<T>(
   data: T[],
   pagination: Pagination,
   statusCode = 200
-) {
+): Response<ApiPaginatedResponse<T>> {
   return res.status(statusCode).json({
     success: true,
     data,
@@ -32,7 +38,7 @@ export function sendError(
   res: Response,
   message: string,
   statusCode = 400
-) {
+): Response<ApiErrorResponse> {
   return res.status(statusCode).json({
     success: false,
     message,
@@ -41,10 +47,10 @@ export function sendError(
 
 export function sendValidationError(
   res: Response,
-  errors: Array<{ field?: string; message: string }>,
+  errors: Array<ValidationErrorDetail>,
   message = "Validation failed",
   statusCode = 400
-) {
+): Response<ApiValidationErrorResponse> {
   return res.status(statusCode).json({
     success: false,
     message,

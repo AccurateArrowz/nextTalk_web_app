@@ -26,6 +26,7 @@ const userSchema = new Schema<UserDocument>(
       lastSeenAt: { type: Date, default: Date.now },
     },
     focusMode: { type: Boolean, default: false },
+    allowMessageFromNonFriends: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

@@ -18,6 +18,7 @@ export interface IUser {
   avatarUrl?: string | null;
   status: UserStatus ;
   focusMode: boolean;
+  allowMessageFromNonFriends?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
